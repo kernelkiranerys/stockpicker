@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+*.egg
+.env
+*.sql
+staticfiles/
+pgdata/
+*.log
+.ollama/
