@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}All Tickers{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">All Tickers ({{ page_obj.paginator.count }})</h1>
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Symbol</th><th>Name</th><th>Exchange</th><th>Sector</th><th>Last Price</th><th>Active</th></tr>
+        </thead>
+        <tbody>
+            {% for ticker in page_obj %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' ticker.symbol %}">{{ ticker.symbol }}</a></td>
+                <td>{{ ticker.name }}</td>
+                <td>{{ ticker.exchange|default:"—" }}</td>
+                <td>{{ ticker.sector|default:"—" }}</td>
+                <td>{{ ticker.last_price|default:"—" }}</td>
+                <td>{% if ticker.is_active %}✓{% else %}✗{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if page_obj.has_other_pages %}
+<div class="flex gap-2 mt-4">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="tab">← Prev</a>{% endif %}
+    <span class="tab active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="tab">Next →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

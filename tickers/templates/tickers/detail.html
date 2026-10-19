@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}{{ ticker.symbol }} — {{ ticker.name }}{% endblock %}
+{% block nav_watchlist %}active{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+    <h1>{{ ticker.symbol }} <span class="text-dim text-sm">— {{ ticker.name }}</span></h1>
+    <div class="flex gap-2">
+        <button hx-get="{% url 'tickers:refresh' ticker.symbol %}" hx-target="#price-card" hx-swap="outerHTML"
+                class="text-sm">Refresh Price</button>
+    </div>
+</div>
+
+<div id="price-card" class="card">
+    <div class="flex justify-between items-center">
+        <div>
+            <span class="stat-value">{{ ticker.last_price|default:"—" }}</span>
+            <span class="text-dim text-sm ml-2">{{ ticker.currency }}</span>
+        </div>
+        <div>
+            {% if latest_signal %}
+            <span class="badge badge-{{ latest_signal.action|lower }}">{{ latest_signal.action }}</span>
+            <span class="text-sm text-dim ml-2">{{ latest_signal.signal_type }} (conf: {{ latest_signal.confidence|floatformat:2 }})</span>
+            {% else %}
+            <span class="text-dim">No active signal</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="text-sm text-dim mt-2">
+        Exchange: {{ ticker.exchange|default:"—" }} | Sector: {{ ticker.sector|default:"—" }} | Industry: {{ ticker.industry|default:"—" }}
+    </div>
+</div>
+<div class="grid grid-2 mt-4">
+    <div class="card">
+        <div class="card-title">Price Chart (Daily)</div>
+        <div class="chart-container" id="price-chart"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Sentiment Timeline (30 days)</div>
+        <div class="chart-container chart-sm" id="sentiment-chart"></div>
+    </div>
+</div>
+<div class="grid grid-2 mt-4">
+    <div class="card">
+        <div class="card-title">Latest News</div>
+        <table>
+            <tbody>
+                {% for article in news %}
+                <tr>
+                    <td>
+                        <div>{{ article.headline }}</div>
+                        <div class="text-sm text-dim">{{ article.source }} — {{ article.published_at|date:"M d, Y H:i" }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td class="text-dim">No news yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-title">Insider Trades</div>
+        <table>
+            <thead><tr><th>Date</th><th>Insider</th><th>Type</th><th>Shares</th><th>Value</th></tr></thead>
+            <tbody>
+                {% for trade in insiders %}
+                <tr>
+                    <td>{{ trade.filing_date|date:"M d, Y" }}</td>
+                    <td>{{ trade.insider_name }}</td>
+                    <td>{{ trade.transaction_type }}</td>
+                    <td>{{ trade.shares }}</td>
+                    <td>{{ trade.value }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-dim">No insider trades yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if latest_technical %}
+<div class="card mt-4">
+    <div class="card-title">Technical Indicators</div>
+    <div class="grid grid-4">
+        <div class="stat"><div class="stat-label">RSI (14)</div><div class="stat-value">{{ latest_technical.rsi_14|floatformat:1|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">MACD</div><div class="stat-value">{{ latest_technical.macd|floatformat:4|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">ADX</div><div class="stat-value">{{ latest_technical.adx|floatformat:1|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">ATR</div><div class="stat-value">{{ latest_technical.atr|floatformat:2|default:"—" }}</div></div>
+    </div>
+</div>
+{% endif %}
+
+{% if latest_report %}
+<div class="card mt-4 ai-section">
+    <div class="card-title">AI Expert Report</div>
+    <div class="grid grid-3 mb-4">
+        <div class="stat"><div class="stat-label">Action</div><div class="stat-value"><span class="badge badge-{{ latest_report.action|lower }}">{{ latest_report.action }}</span></div></div>
+        <div class="stat"><div class="stat-label">Confidence</div><div class="stat-value">{{ latest_report.confidence|floatformat:2 }}</div></div>
+        <div class="stat"><div class="stat-label">Sentiment</div><div class="stat-value {{ latest_report.sentiment_score|floatformat:2|cut:'-'|cut:'.'|yesno:'neg,pos,neu' }}">{{ latest_report.sentiment_score|floatformat:2 }}</div></div>
+    </div>
+    <div class="mb-4"><strong>Summary:</strong> {{ latest_report.summary }}</div>
+    <div class="mb-4"><strong>Reasoning:</strong> {{ latest_report.action_reasoning }}</div>
+    {% if latest_report.key_risks %}
+    <div class="mb-4"><strong>Key Risks:</strong>
+        <ul>
+            {% for risk in latest_report.key_risks %}<li>{{ risk }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div class="text-sm text-dim">Model: {{ latest_report.model_name }} | Type: {{ latest_report.report_type }} | Generated: {{ latest_report.created_at|date:"M d, Y H:i" }}</div>
+</div>
+{% endif %}
+
+{% if options %}
+<div class="card mt-4">
+    <div class="card-title">Options Snapshot ({{ options.expiry }})</div>
+    <div class="grid grid-4">
+        <div class="stat"><div class="stat-label">Put/Call Ratio</div><div class="stat-value">{{ options.put_call_ratio|floatformat:2|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">Vol/OI Ratio</div><div class="stat-value">{{ options.vol_oi_ratio|floatformat:2|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">Avg IV</div><div class="stat-value">{{ options.implied_volatility|floatformat:2|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">Unusual</div><div class="stat-value">{% if options.unusual_activity %}<span class="neg">YES</span>{% else %}<span class="neu">No</span>{% endif %}</div></div>
+    </div>
+</div>
+{% endif %}
+
+{% if latest_signal %}
+<div class="card mt-4">
+    <div class="card-title">Latest Signal Detail</div>
+    <div class="grid grid-4">
+        <div class="stat"><div class="stat-label">Technical</div><div class="stat-value">{{ latest_signal.technical_score|floatformat:2 }}</div></div>
+        <div class="stat"><div class="stat-label">Sentiment</div><div class="stat-value">{{ latest_signal.sentiment_score|floatformat:2 }}</div></div>
+        <div class="stat"><div class="stat-label">Options</div><div class="stat-value">{{ latest_signal.options_score|floatformat:2 }}</div></div>
+        <div class="stat"><div class="stat-label">Insider</div><div class="stat-value">{{ latest_signal.insider_score|floatformat:2 }}</div></div>
+    </div>
+    {% if latest_signal.reasoning %}
+    <div class="mt-4"><strong>Reasoning:</strong> {{ latest_signal.reasoning }}</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const ohlcvData = [
+    {% for bar in ohlcv %}
+    {date: "{{ bar.timestamp|date:"Y-m-d" }}", open: {{ bar.open }}, high: {{ bar.high }}, low: {{ bar.low }}, close: {{ bar.close }}, volume: {{ bar.volume }}},
+    {% endfor %}
+];
+
+const ctx = document.getElementById('price-chart');
+if (ctx && ohlcvData.length > 0) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ohlcvData.map(d => d.date),
+            datasets: [{
+                label: 'Close Price',
+                data: ohlcvData.map(d => d.close),
+                borderColor: '#58a6ff',
+                backgroundColor: 'rgba(88,166,255,0.1)',
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#c9d1d9' } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#30363d' } },
+                y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+        }
+    });
+}
+
+const sentimentData = [
+    {% for s in sentiment_timeline %}
+    {date: "{{ s.date|date:"Y-m-d" }}", composite: {{ s.composite }}, news: {{ s.news_sentiment }}, reddit: {{ s.reddit_sentiment }}},
+    {% endfor %}
+];
+
+const sctx = document.getElementById('sentiment-chart');
+if (sctx && sentimentData.length > 0) {
+    new Chart(sctx, {
+        type: 'line',
+        data: {
+            labels: sentimentData.map(d => d.date),
+            datasets: [
+                {label: 'Composite', data: sentimentData.map(d => d.composite), borderColor: '#bc8cff', tension: 0.3},
+                {label: 'News', data: sentimentData.map(d => d.news), borderColor: '#58a6ff', tension: 0.3},
+                {label: 'Reddit', data: sentimentData.map(d => d.reddit), borderColor: '#3fb950', tension: 0.3}
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#c9d1d9' } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 6 }, grid: { color: '#30363d' } },
+                y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, min: -1, max: 1 }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

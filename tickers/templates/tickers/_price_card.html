@@ -1,0 +1,19 @@
+<div id="price-card" class="card">
+    <div class="flex justify-between items-center">
+        <div>
+            <span class="stat-value">{{ ticker.last_price|default:"—" }}</span>
+            <span class="text-dim text-sm ml-2">{{ ticker.currency }}</span>
+        </div>
+        <div>
+            {% if latest_signal %}
+            <span class="badge badge-{{ latest_signal.action|lower }}">{{ latest_signal.action }}</span>
+            <span class="text-sm text-dim ml-2">{{ latest_signal.signal_type }} (conf: {{ latest_signal.confidence|floatformat:2 }})</span>
+            {% else %}
+            <span class="text-dim">No active signal</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="text-sm text-dim mt-2">
+        Updated: {{ ticker.last_price_updated|date:"M d, Y H:i"|default:"—" }}
+    </div>
+</div>
