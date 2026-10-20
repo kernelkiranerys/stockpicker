@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Screener{% endblock %}
+{% block nav_screener %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Signal Screener</h1>
+
+<div class="card">
+    <div class="card-title">Day Trade Signals (Top 20)</div>
+    <table>
+        <thead><tr><th>Symbol</th><th>Action</th><th>Confidence</th><th>Created</th></tr></thead>
+        <tbody>
+            {% for signal in day_trade %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' signal.ticker.symbol %}">{{ signal.ticker.symbol }}</a></td>
+                <td><span class="badge badge-{{ signal.action|lower }}">{{ signal.action }}</span></td>
+                <td>{{ signal.confidence|floatformat:2 }}</td>
+                <td class="text-sm text-dim">{{ signal.created_at|date:"M d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No day trade signals yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card mt-4">
+    <div class="card-title">Medium Turnaround Signals (Top 20)</div>
+    <table>
+        <thead><tr><th>Symbol</th><th>Action</th><th>Confidence</th><th>Created</th></tr></thead>
+        <tbody>
+            {% for signal in medium %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' signal.ticker.symbol %}">{{ signal.ticker.symbol }}</a></td>
+                <td><span class="badge badge-{{ signal.action|lower }}">{{ signal.action }}</span></td>
+                <td>{{ signal.confidence|floatformat:2 }}</td>
+                <td class="text-sm text-dim">{{ signal.created_at|date:"M d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No medium turnaround signals yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card mt-4">
+    <div class="card-title">Seasonal Swing Signals (Top 20)</div>
+    <table>
+        <thead><tr><th>Symbol</th><th>Action</th><th>Confidence</th><th>Created</th></tr></thead>
+        <tbody>
+            {% for signal in seasonal %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' signal.ticker.symbol %}">{{ signal.ticker.symbol }}</a></td>
+                <td><span class="badge badge-{{ signal.action|lower }}">{{ signal.action }}</span></td>
+                <td>{{ signal.confidence|floatformat:2 }}</td>
+                <td class="text-sm text-dim">{{ signal.created_at|date:"M d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No seasonal swing signals yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

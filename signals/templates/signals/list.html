@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Signals{% endblock %}
+{% block nav_screener %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">All Signals ({{ page_obj.paginator.count }})</h1>
+
+<div class="flex gap-2 mb-4">
+    <a href="{% url 'signals:list' %}" class="tab {% if not current_type %}active{% endif %}">All</a>
+    <a href="{% url 'signals:list' %}?type=day_trade" class="tab {% if current_type == 'day_trade' %}active{% endif %}">Day Trade</a>
+    <a href="{% url 'signals:list' %}?type=medium_turnaround" class="tab {% if current_type == 'medium_turnaround' %}active{% endif %}">Medium</a>
+    <a href="{% url 'signals:list' %}?type=seasonal_swing" class="tab {% if current_type == 'seasonal_swing' %}active{% endif %}">Seasonal</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Ticker</th><th>Action</th><th>Type</th><th>Confidence</th><th>Conviction</th><th>Created</th><th>Reasoning</th></tr>
+        </thead>
+        <tbody>
+            {% for signal in page_obj %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' signal.ticker.symbol %}">{{ signal.ticker.symbol }}</a></td>
+                <td><span class="badge badge-{{ signal.action|lower }}">{{ signal.action }}</span></td>
+                <td class="text-sm">{{ signal.signal_type }}</td>
+                <td>{{ signal.confidence|floatformat:2 }}</td>
+                <td>{% widthratio signal.confidence 1 100 %}</td>
+                <td class="text-sm text-dim">{{ signal.created_at|date:"M d H:i" }}</td>
+                <td class="text-sm text-dim">{{ signal.reasoning|truncatechars:80 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-dim">No signals yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="flex gap-2 mt-4">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}" class="tab">← Prev</a>{% endif %}
+    <span class="tab active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}" class="tab">Next →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Signal Log{% endblock %}
+{% block nav_log %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Signal Log</h1>
+
+<div class="grid grid-5 mb-4">
+    <div class="card stat"><div class="stat-label">Total</div><div class="stat-value">{{ total }}</div></div>
+    <div class="card stat"><div class="stat-label">Wins</div><div class="stat-value pos">{{ wins }}</div></div>
+    <div class="card stat"><div class="stat-label">Losses</div><div class="stat-value neg">{{ losses }}</div></div>
+    <div class="card stat"><div class="stat-label">Pending</div><div class="stat-value neu">{{ pending }}</div></div>
+    <div class="card stat"><div class="stat-label">Hit Rate</div><div class="stat-value">{{ hit_rate }}%</div></div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Ticker</th><th>Signal Type</th><th>Action</th><th>Recorded</th><th>Outcome</th><th>P/L %</th><th>Days</th></tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.signal.ticker.symbol }}</td>
+                <td class="text-sm">{{ entry.signal.signal_type }}</td>
+                <td><span class="badge badge-{{ entry.signal.action|lower }}">{{ entry.signal.action }}</span></td>
+                <td class="text-sm text-dim">{{ entry.recorded_at|date:"M d H:i" }}</td>
+                <td>
+                    {% if entry.outcome == "win" %}<span class="pos">Win</span>
+                    {% elif entry.outcome == "loss" %}<span class="neg">Loss</span>
+                    {% else %}<span class="neu">Pending</span>{% endif %}
+                </td>
+                <td>{{ entry.pnl_pct|default:"—"|floatformat:2 }}</td>
+                <td>{{ entry.days_to_outcome|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-dim">No signal log entries yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
