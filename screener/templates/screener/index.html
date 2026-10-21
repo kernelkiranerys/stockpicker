@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Screener{% endblock %}
+{% block nav_screener %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Stock Screener</h1>
+
+{% if regime %}
+<div class="card mb-4">
+    <div class="card-title">Market Regime</div>
+    <div class="grid grid-4">
+        <div class="stat"><div class="stat-label">Regime</div><div class="stat-value">{{ regime.regime }}</div></div>
+        <div class="stat"><div class="stat-label">Strategy Mode</div><div class="stat-value text-sm">{{ regime.strategy_mode }}</div></div>
+        <div class="stat"><div class="stat-label">VIX</div><div class="stat-value">{{ regime.vix|default:"—" }}</div></div>
+        <div class="stat"><div class="stat-label">10Y Yield</div><div class="stat-value">{{ regime.treasury_10y|default:"—" }}</div></div>
+    </div>
+    {% if regime.yield_delta_30d %}
+    <div class="mt-2 text-sm text-dim">30-day yield delta: {{ regime.yield_delta_30d }} bps | Yield curve: {{ regime.yield_curve|default:"—" }} bps | SPY trend: {{ regime.spy_trend|default:"—" }}</div>
+    {% endif %}
+    {% for signal in regime.signals %}
+    <div class="text-sm mt-2">{{ signal }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid grid-4 mb-4">
+    <div class="card stat"><div class="stat-label">Total Screened</div><div class="stat-value">{{ total }}</div></div>
+    <div class="card stat"><div class="stat-label">High Conviction</div><div class="stat-value pos">{{ high_conviction|length }}</div></div>
+    <div class="card stat"><div class="stat-label">Medium Conviction</div><div class="stat-value neu">{{ medium_conviction|length }}</div></div>
+    <div class="card stat"><div class="stat-label">Threshold</div><div class="stat-value">75</div></div>
+</div>
+
+<div class="card">
+    <div class="card-title">Screening Results (Top 50)</div>
+    <table>
+        <thead>
+            <tr><th>Rank</th><th>Symbol</th><th>Conviction</th><th>Market Cap</th><th>P/E</th><th>Beta</th><th>Vol</th><th>Win Rate</th><th>Pass</th></tr>
+        </thead>
+        <tbody>
+            {% for s in screened %}
+            <tr>
+                <td>{{ s.rank|default:"—" }}</td>
+                <td><a href="{% url 'tickers:detail' s.ticker.symbol %}">{{ s.ticker.symbol }}</a></td>
+                <td>
+                    {% if s.conviction_score >= 75 %}<span class="pos">{{ s.conviction_score }}</span>
+                    {% elif s.conviction_score >= 50 %}<span class="neu">{{ s.conviction_score }}</span>
+                    {% else %}{{ s.conviction_score }}{% endif %}
+                </td>
+                <td class="text-sm">{{ s.market_cap|default:"—" }}</td>
+                <td>{{ s.pe_ratio|default:"—" }}</td>
+                <td>{{ s.beta|default:"—" }}</td>
+                <td class="text-sm">{{ s.avg_daily_volume|default:"—" }}</td>
+                <td>{{ s.historical_win_rate|default:"—"|floatformat:2 }}</td>
+                <td>
+                    {% if s.passes_fundamental and s.passes_liquidity and s.passes_volatility %}<span class="pos">PASS</span>
+                    {% else %}<span class="neg">FAIL</span>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-dim">No screening data yet. Run the daily screening pipeline.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

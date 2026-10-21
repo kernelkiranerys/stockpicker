@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Backtest{% endblock %}
+{% block nav_backtest %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Backtesting</h1>
+
+<div class="card">
+    <div class="card-title">Backtest Runs</div>
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Strategy</th><th>Period</th><th>Return</th><th>Win Rate</th><th>Sharpe</th><th>Max DD</th><th>Trades</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td>{{ run.name }}</td>
+                <td class="text-sm">{{ run.strategy }}</td>
+                <td class="text-sm">{{ run.start_date|date:"M Y" }} - {{ run.end_date|date:"M Y" }}</td>
+                <td class="{% if run.total_return_pct > 0 %}pos{% elif run.total_return_pct < 0 %}neg{% else %}neu{% endif %}">{{ run.total_return_pct|default:"—"|floatformat:2 }}%</td>
+                <td>{{ run.win_rate|default:"—"|floatformat:1 }}%</td>
+                <td>{{ run.sharpe_ratio|default:"—"|floatformat:2 }}</td>
+                <td class="neg">{{ run.max_drawdown_pct|default:"—"|floatformat:2 }}%</td>
+                <td>{{ run.total_trades }}</td>
+                <td>{% if run.status == "completed" %}<span class="pos">{{ run.status }}</span>{% else %}<span class="neu">{{ run.status }}</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-dim">No backtest runs yet. Run the weekly backtest task.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

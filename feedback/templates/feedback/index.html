@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Feedback Loop{% endblock %}
+{% block nav_feedback %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Feedback Loop</h1>
+<p class="text-dim mb-4">Self-improvement: weekly review of failed trades → LLM reflection → lessons injected into future prompts.</p>
+
+<div class="card">
+    <div class="card-title">Lessons Learned ({{ lessons|length }})</div>
+    <table>
+        <thead><tr><th>Date</th><th>Ticker</th><th>P/L</th><th>Lesson</th></tr></thead>
+        <tbody>
+            {% for lesson in lessons %}
+            <tr>
+                <td class="text-sm">{{ lesson.created_at|date:"M d" }}</td>
+                <td>{{ lesson.ticker_symbol }}</td>
+                <td class="neg">{{ lesson.pnl_pct|floatformat:2 }}%</td>
+                <td class="text-sm">{{ lesson.lesson|truncatechars:120 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No lessons yet. Run the weekly review task.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
