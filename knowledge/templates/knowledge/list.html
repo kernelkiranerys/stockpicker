@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Base{% endblock %}
+{% block nav_knowledge %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Knowledge Base</h1>
+<p class="text-dim mb-4">RAG documents for the AI expert. Upload texts on trading, investing, TA, options, sector rotation, SEC filings.</p>
+
+<div class="card mb-4">
+    <div class="card-title">Upload Document</div>
+    <form method="post" action="{% url 'knowledge:upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="grid grid-2">
+            <div>
+                <label>Title</label><br>
+                <input type="text" name="title" class="w-full" placeholder="Document title">
+            </div>
+            <div>
+                <label>Category</label><br>
+                <select name="category" class="w-full">
+                    <option value="day_trading">Day Trading</option>
+                    <option value="value_investing">Value Investing</option>
+                    <option value="technical_analysis">Technical Analysis</option>
+                    <option value="options">Options</option>
+                    <option value="sector_rotation">Sector Rotation</option>
+                    <option value="sec_filings">SEC Filings</option>
+                    <option value="market_psychology">Market Psychology</option>
+                    <option value="macro_fundamentals">Macro & Fundamentals</option>
+                    <option value="general" selected>General</option>
+                </select>
+            </div>
+            <div>
+                <label>Source</label><br>
+                <input type="text" name="source" class="w-full" placeholder="e.g. Investopedia, Buffett letters">
+            </div>
+            <div>
+                <label>Source URL</label><br>
+                <input type="url" name="source_url" class="w-full" placeholder="https://...">
+            </div>
+        </div>
+        <div class="mt-4">
+            <label>Or paste text content</label><br>
+            <textarea name="content" rows="5" class="w-full" placeholder="Paste text here..."></textarea>
+        </div>
+        <div class="mt-4">
+            <label>Or upload a file (txt, html)</label><br>
+            <input type="file" name="file" accept=".txt,.html,.htm,.md">
+        </div>
+        <div class="mt-4">
+            <button type="submit">Upload</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-title">Documents ({{ docs|length }})</div>
+    <table>
+        <thead>
+            <tr><th>Title</th><th>Category</th><th>Source</th><th>Uploaded</th><th>Processed</th><th>Chunks</th></tr>
+        </thead>
+        <tbody>
+            {% for doc in docs %}
+            <tr>
+                <td><a href="{% url 'knowledge:detail' doc.id %}">{{ doc.title }}</a></td>
+                <td class="text-sm">{{ doc.get_category_display }}</td>
+                <td class="text-sm">{{ doc.source }}</td>
+                <td class="text-sm text-dim">{{ doc.uploaded_at|date:"M d, Y" }}</td>
+                <td>{% if doc.is_processed %}<span class="pos">Yes</span>{% else %}<span class="neu">No</span>{% endif %}</td>
+                <td>{{ doc.chunk_count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-dim">No documents uploaded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

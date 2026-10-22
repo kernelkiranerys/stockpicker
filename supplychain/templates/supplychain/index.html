@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Supply Chain{% endblock %}
+{% block nav_supplychain %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Supply Chain Analysis</h1>
+<p class="text-dim mb-4">Relationships extracted from 10-K filings via LLM. Customers, suppliers, competitors per company.</p>
+
+<div class="card">
+    <div class="card-title">Company Relationships ({{ relationships|length }})</div>
+    <table>
+        <thead>
+            <tr><th>Source Company</th><th>Target</th><th>Type</th><th>Context</th><th>Filing Date</th></tr>
+        </thead>
+        <tbody>
+            {% for rel in relationships %}
+            <tr>
+                <td>{{ rel.source_ticker.symbol }}</td>
+                <td>{{ rel.target_company }}</td>
+                <td><span class="badge badge-{{ rel.relationship_type|slice:":3" }}">{{ rel.relationship_type }}</span></td>
+                <td class="text-sm text-dim">{{ rel.context|truncatechars:100 }}</td>
+                <td class="text-sm">{{ rel.filing_date|date:"M Y"|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-dim">No supply chain data yet. Run the extraction task.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

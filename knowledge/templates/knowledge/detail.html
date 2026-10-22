@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block nav_knowledge %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ doc.title }}</h1>
+
+<div class="card mb-4">
+    <div class="grid grid-4">
+        <div><strong>Category:</strong> {{ doc.get_category_display }}</div>
+        <div><strong>Source:</strong> {{ doc.source|default:"—" }}</div>
+        <div><strong>Uploaded:</strong> {{ doc.uploaded_at|date:"M d, Y H:i" }}</div>
+        <div><strong>Processed:</strong> {% if doc.is_processed %}Yes{% else %}No{% endif %}</div>
+    </div>
+    <div class="mt-2"><strong>Chunks:</strong> {{ doc.chunk_count }}</div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-title">Content Preview (first 500 chars)</div>
+    <div class="text-sm">{{ doc.content|truncatechars:500 }}</div>
+</div>
+
+<div class="card">
+    <div class="flex justify-between items-center">
+        <div class="card-title" style="margin-bottom:0;">Chunks ({{ chunks|length }})</div>
+        <form method="post" action="{% url 'knowledge:delete' doc.id %}" onsubmit="return confirm('Delete this document and all its chunks?');">
+            {% csrf_token %}
+            <button type="submit">Delete Document</button>
+        </form>
+    </div>
+    <table>
+        <thead><tr><th>#</th><th>Text Preview</th><th>Tokens</th><th>Category</th></tr></thead>
+        <tbody>
+            {% for chunk in chunks %}
+            <tr>
+                <td>{{ chunk.chunk_index }}</td>
+                <td class="text-sm">{{ chunk.text|truncatechars:200 }}</td>
+                <td>{{ chunk.token_count }}</td>
+                <td class="text-sm">{{ chunk.category|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No chunks yet. Run the processing task.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
