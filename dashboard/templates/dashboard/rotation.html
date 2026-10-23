@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Industry Rotation{% endblock %}
+{% block nav_rotation %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Industry Rotation</h1>
+<p class="text-dim mb-4">Sector relative strength and seasonal performance. Helps determine which sectors to favor this year.</p>
+
+<div class="card">
+    <div class="card-title">Sector Performance</div>
+    <table>
+        <thead>
+            <tr><th>Sector</th><th>Tickers Tracked</th><th>Avg Daily Change (%)</th><th>Trend</th></tr>
+        </thead>
+        <tbody>
+            {% for item in sector_data %}
+            <tr>
+                <td>{{ item.sector.name }}</td>
+                <td>{{ item.ticker_count }}</td>
+                <td class="{% if item.avg_change > 0 %}pos{% elif item.avg_change < 0 %}neg{% else %}neu{% endif %}">
+                    {{ item.avg_change }}%
+                </td>
+                <td>
+                    {% if item.avg_change > 0 %}<span class="pos">Bullish</span>{% elif item.avg_change < 0 %}<span class="neg">Bearish</span>{% else %}<span class="neu">Neutral</span>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No data yet. Run data collection tasks.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">Sector Rotation Heatmap</div>
+    <div class="chart-container" id="rotation-heatmap">
+        <p class="text-dim">Heatmap will render when sector performance data is available.</p>
+    </div>
+</div>
+{% endblock %}

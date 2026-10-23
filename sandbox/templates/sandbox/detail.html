@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ portfolio.name }} — Practice Portfolio{% endblock %}
+{% block nav_sandbox %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ portfolio.name }}</h1>
+
+<div class="grid grid-4 mb-4">
+    <div class="card stat">
+        <div class="stat-label">Starting Capital</div>
+        <div class="stat-value">{{ portfolio.starting_cash }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Current Value</div>
+        <div class="stat-value">{{ portfolio.total_value|floatformat:2 }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">P/L</div>
+        <div class="stat-value {{ portfolio.total_pnl|floatformat:2|yesno:'pos,neg,neu' }}">{{ portfolio.total_pnl|floatformat:2 }} ({{ portfolio.total_pnl_pct|floatformat:1 }}%)</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Cash Available</div>
+        <div class="stat-value">{{ portfolio.cash|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div class="grid grid-4 mb-4">
+    <div class="card stat">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value">{{ win_rate }}%</div>
+        <div class="text-sm text-dim">{{ winning }}W / {{ losing }}L ({{ total_trades }} trades)</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Realized P/L</div>
+        <div class="stat-value {{ total_realized|floatformat:2|yesno:'pos,neg,neu' }}">{{ total_realized|floatformat:2 }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Open Positions</div>
+        <div class="stat-value">{{ positions|length }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Signal Mode</div>
+        <div class="stat-value text-sm">{{ portfolio.signal_mode }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">Equity Curve vs S&P 500</div>
+    <div class="chart-container" id="equity-chart"></div>
+</div>
+
+<div class="grid grid-2 mt-4">
+    <div class="card">
+        <div class="card-title">Open Positions</div>
+        <table>
+            <thead>
+                <tr><th>Symbol</th><th>Qty</th><th>Entry</th><th>Current</th><th>P/L</th><th>P/L%</th><th>Days</th></tr>
+            </thead>
+            <tbody>
+                {% for pos in positions %}
+                <tr>
+                    <td><a href="{% url 'tickers:detail' pos.ticker.symbol %}">{{ pos.ticker.symbol }}</a></td>
+                    <td>{{ pos.quantity }}</td>
+                    <td>{{ pos.entry_price }}</td>
+                    <td>{{ pos.current_price|default:"—" }}</td>
+                    <td class="{{ pos.unrealized_pnl|floatformat:2|yesno:'pos,neg,neu' }}">{{ pos.unrealized_pnl|floatformat:2 }}</td>
+                    <td class="{{ pos.unrealized_pnl_pct|floatformat:1|yesno:'pos,neg,neu' }}">{{ pos.unrealized_pnl_pct|floatformat:1 }}%</td>
+                    <td>{{ pos.days_held }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-dim">No open positions.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-title">Recent Trades</div>
+        <table>
+            <thead>
+                <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>P/L</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+                {% for trade in trades %}
+                <tr>
+                    <td class="text-sm">{{ trade.executed_at|date:"M d H:i" }}</td>
+                    <td>{{ trade.ticker.symbol }}</td>
+                    <td><span class="badge badge-{{ trade.side|lower }}">{{ trade.side }}</span></td>
+                    <td>{{ trade.quantity }}</td>
+                    <td>{{ trade.price }}</td>
+                    <td class="{{ trade.realized_pnl|floatformat:2|yesno:'pos,neg,neu' }}">{{ trade.realized_pnl|default:"—"|floatformat:2 }}</td>
+                    <td class="text-sm text-dim">{{ trade.reason|truncatechars:60 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-dim">No trades yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="flex justify-between items-center">
+        <div class="card-title" style="margin-bottom:0;">Settings</div>
+        <form method="post" action="{% url 'sandbox:reset' portfolio.id %}" onsubmit="return confirm('Reset this portfolio? All positions and trades will be deleted.');">
+            {% csrf_token %}
+            <button type="submit">Reset Portfolio</button>
+        </form>
+    </div>
+    <div class="mt-2 text-sm text-dim">
+        Position sizing: {{ portfolio.position_sizing }} | Fees: {{ portfolio.fees_per_trade }} | Benchmark: {{ portfolio.benchmark_ticker }}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const equityData = [
+    {% for point in equity_points %}
+    {timestamp: "{{ point.timestamp|date:"Y-m-d H:i" }}", equity: {{ point.total_equity }}, benchmark: {{ point.benchmark_equity|default:0 }}, pnl_pct: {{ point.portfolio_pnl_pct }}, benchmark_pnl_pct: {{ point.benchmark_pnl_pct|default:0 }}},
+    {% endfor %}
+];
+
+const ctx = document.getElementById('equity-chart');
+if (ctx && equityData.length > 0) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: equityData.map(d => d.timestamp),
+            datasets: [
+                {label: 'Portfolio', data: equityData.map(d => d.equity), borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.1},
+                {label: 'S&P 500 (SPY)', data: equityData.map(d => d.benchmark), borderColor: '#8b949e', borderDash: [5,5], tension: 0.1}
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#c9d1d9' } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#30363d' } },
+                y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+        }
+    });
+} else if (ctx) {
+    ctx.innerHTML = '<p class="text-dim">No equity data yet. Trades and revaluation will populate this chart.</p>';
+}
+</script>
+{% endblock %}

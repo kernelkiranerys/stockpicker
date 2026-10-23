@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Watchlist{% endblock %}
+{% block nav_watchlist %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Seasonal Swing Watchlist</h1>
+{% if watchlist %}
+<div class="card">
+    <div class="card-title">{{ watchlist.name }} — {{ watchlist.tickers.count }} tickers</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Last Price</th>
+                <th>Signal</th>
+                <th>Type</th>
+                <th>Confidence</th>
+                <th>AI Expert</th>
+                <th>AI Sentiment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in ticker_rows %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' row.ticker.symbol %}">{{ row.ticker.symbol }}</a></td>
+                <td>{{ row.ticker.name }}</td>
+                <td>{{ row.ticker.last_price|default:"—" }}</td>
+                <td>
+                    {% if row.signal %}
+                    <span class="badge badge-{{ row.signal.action|lower }}">{{ row.signal.action }}</span>
+                    {% else %}
+                    <span class="text-dim">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.signal %}<span class="text-sm text-dim">{{ row.signal.signal_type }}</span>{% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if row.signal %}{{ row.signal.confidence|floatformat:2 }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if row.report %}
+                    <span class="badge badge-{{ row.report.action|lower }}">{{ row.report.action }}</span>
+                    {% else %}
+                    <span class="text-dim">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.report %}{{ row.report.sentiment_score|floatformat:2 }}{% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card"><p class="text-dim">No watchlist found. Run the seed command.</p></div>
+{% endif %}
+{% endblock %}

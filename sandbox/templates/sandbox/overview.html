@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Practice Portfolio{% endblock %}
+{% block nav_sandbox %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Practice Portfolios</h1>
+<p class="text-dim mb-4">Paper trading simulator that auto-follows the app's signals. Tracks P/L vs S&P 500.</p>
+
+<div class="grid grid-3 mb-4">
+    {% for portfolio in portfolios %}
+    <a href="{% url 'sandbox:detail' portfolio.id %}" style="text-decoration:none;color:inherit;">
+    <div class="card">
+        <div class="card-title">{{ portfolio.name }}</div>
+        <div class="stat">
+            <div class="stat-label">Current Value</div>
+            <div class="stat-value">{{ portfolio.total_value|floatformat:2 }}</div>
+        </div>
+        <div class="mt-2 text-sm">
+            Starting: {{ portfolio.starting_cash }} |
+            <span class="{% if portfolio.total_pnl > 0 %}pos{% elif portfolio.total_pnl < 0 %}neg{% else %}neu{% endif %}">
+                P/L: {{ portfolio.total_pnl|floatformat:2 }} ({{ portfolio.total_pnl_pct|floatformat:1 }}%)
+            </span>
+        </div>
+        <div class="text-sm text-dim mt-2">Signal: {{ portfolio.signal_mode }} | Positions: {{ portfolio.positions.count }}</div>
+    </div>
+    </a>
+    {% empty %}
+    <div class="card"><p class="text-dim">No portfolios. Run the seed command.</p></div>
+    {% endfor %}
+</div>
+{% endblock %}

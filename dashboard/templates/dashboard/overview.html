@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Market Overview{% endblock %}
+{% block nav_overview %}active{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Market Overview</h1>
+
+<div class="grid grid-4 mb-4">
+    <div class="card stat">
+        <div class="stat-label">Watchlist Tickers</div>
+        <div class="stat-value">{{ watchlist_count }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Total Tickers Tracked</div>
+        <div class="stat-value">{{ ticker_count }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">Active Signals</div>
+        <div class="stat-value">{{ signal_count }}</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-label">AI Reports</div>
+        <div class="stat-value">{{ ai_report_count }}</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-title">Sector Heatmap</div>
+        <div class="chart-container" id="sector-heatmap">
+            <p class="text-dim">Loading sector data...</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">Macro Indicators</div>
+        <table>
+            <thead><tr><th>Indicator</th><th>Value</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for macro in macros %}
+                <tr>
+                    <td>{{ macro.name }}</td>
+                    <td>{{ macro.value }}</td>
+                    <td>{{ macro.date }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-dim">No macro data yet. Run data collection tasks.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-title">Watchlist Quick View</div>
+    <table>
+        <thead>
+            <tr><th>Symbol</th><th>Name</th><th>Last Price</th><th>Sector</th></tr>
+        </thead>
+        <tbody>
+            {% for ticker in watchlist_tickers %}
+            <tr>
+                <td><a href="{% url 'tickers:detail' ticker.symbol %}">{{ ticker.symbol }}</a></td>
+                <td>{{ ticker.name }}</td>
+                <td>{{ ticker.last_price|default:"—" }}</td>
+                <td>{{ ticker.sector|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-dim">No watchlist tickers. Run the seed command.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

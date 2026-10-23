@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Stock Picker{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --bg-hover: #21262d;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --green: #3fb950;
+            --red: #f85149;
+            --blue: #58a6ff;
+            --yellow: #d29922;
+            --purple: #bc8cff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        a { color: var(--blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        /* Layout */
+        .navbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .navbar-brand { font-weight: bold; font-size: 16px; color: var(--text); }
+        .navbar a { color: var(--text-dim); font-size: 14px; }
+        .navbar a:hover { color: var(--text); }
+        .navbar a.active { color: var(--green); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-title { font-size: 14px; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+        tr:hover { background: var(--bg-hover); }
+        /* Badges */
+        .badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .badge-buy { background: rgba(63,185,80,0.15); color: var(--green); }
+        .badge-sell { background: rgba(248,81,73,0.15); color: var(--red); }
+        .badge-hold { background: rgba(139,148,158,0.15); color: var(--text-dim); }
+        .badge-trim { background: rgba(210,153,34,0.15); color: var(--yellow); }
+        /* Grid */
+        .grid { display: grid; gap: 16px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+        /* Stats */
+        .stat { text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; }
+        .stat-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
+        .pos { color: var(--green); }
+        .neg { color: var(--red); }
+        .neu { color: var(--text-dim); }
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+        .tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-dim); }
+        .tab.active { background: var(--bg-hover); color: var(--text); border-color: var(--blue); }
+        /* Chart */
+        .chart-container { position: relative; height: 400px; }
+        .chart-sm { height: 200px; }
+        /* AI Expert */
+        .ai-section { border-left: 3px solid var(--purple); padding-left: 16px; }
+        .gauge { display: flex; align-items: center; gap: 12px; }
+        .gauge-bar { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, var(--red), var(--text-dim), var(--green)); position: relative; }
+        .gauge-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--blue); position: absolute; top: -4px; }
+        /* Misc */
+        .loading { opacity: 0.5; }
+        .htmx-request .loading { display: inline; }
+        .text-sm { font-size: 12px; }
+        .text-dim { color: var(--text-dim); }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .gap-2 { gap: 8px; }
+        .w-full { width: 100%; }
+        select, input, button, textarea {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button { cursor: pointer; }
+        button:hover { background: var(--border); }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <span class="navbar-brand">Stock Picker</span>
+        <a href="{% url 'dashboard:overview' %}" class="{% block nav_overview %}{% endblock %}">Overview</a>
+        <a href="{% url 'dashboard:watchlist' %}" class="{% block nav_watchlist %}{% endblock %}">Watchlist</a>
+        <a href="{% url 'screener:index' %}" class="{% block nav_screener_app %}{% endblock %}">Screener</a>
+        <a href="{% url 'signals:screener' %}" class="{% block nav_screener %}{% endblock %}">Signals</a>
+        <a href="{% url 'dashboard:rotation' %}" class="{% block nav_rotation %}{% endblock %}">Rotation</a>
+        <a href="{% url 'sandbox:overview' %}" class="{% block nav_sandbox %}{% endblock %}">Portfolio</a>
+        <a href="{% url 'backtest:index' %}" class="{% block nav_backtest %}{% endblock %}">Backtest</a>
+        <a href="{% url 'feedback:index' %}" class="{% block nav_feedback %}{% endblock %}">Feedback</a>
+        <a href="{% url 'supplychain:index' %}" class="{% block nav_supplychain %}{% endblock %}">Supply Chain</a>
+        <a href="{% url 'signallog:log' %}" class="{% block nav_log %}{% endblock %}">Log</a>
+        <a href="{% url 'knowledge:list' %}" class="{% block nav_knowledge %}{% endblock %}">Knowledge</a>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
